@@ -1,0 +1,138 @@
+#!/bin/bash
+# GitHub Trending 抓取脚本
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+LOG_FILE="$PROJECT_DIR/logs/fetch.log"
+
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_FILE"
+}
+
+# Load bridge environment for Feishu webhook (if available)
+if [[ -f "$HOME/ai-tasks/bridge/bridge.env" ]]; then
+    source "$HOME/ai-tasks/bridge/bridge.env"
+    # Restore LOG_FILE to fetch script's log file (override bridge.env setting)
+    LOG_FILE="$PROJECT_DIR/logs/fetch.log"
+fi
+
+show_help() {
+    echo "GitHub Trending 抓取工具"
+    echo ""
+    echo "用法: $(basename $0) [选项]"
+    echo ""
+    echo "选项:"
+    echo "  --help     显示帮助"
+    echo "  --json     仅输出 JSON"
+    echo "  --analyze  抓取后自动分析"
+    echo ""
+    echo "示例:"
+    echo "  $(basename $0)              # 抓取今天"
+    echo "  $(basename $0) --json       # 仅输出 JSON"
+    echo "  $(basename $0) --analyze   # 抓取 + 分析"
+}
+
+run_scrape() {
+    cd "$PROJECT_DIR"
+    
+    # Ensure node is available via nvm if not in PATH (for cron compatibility)
+    if ! command -v node &> /dev/null; then
+        export NVM_DIR="$HOME/.nvm"
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+    fi
+    
+    if [ ! -d "$PROJECT_DIR/node_modules" ]; then
+        log "安装依赖..."
+        npm init -y > /dev/null 2>&1
+        npm install playwright --silent
+    fi
+    
+    log "开始抓取 GitHub Trending..."
+    node "$SCRIPT_DIR/scrape.js"
+    
+    # After successful scrape, send Feishu notification if webhook is configured
+    if [[ -n "$FEISHU_WEBHOOK_URL" ]]; then
+        # Count number of projects in the latest JSON file
+        LATEST_JSON=$(ls -t "$PROJECT_DIR/data/"*.json 2>/dev/null | head -1)
+        if [[ -n "$LATEST_JSON" && -f "$LATEST_JSON" ]]; then
+            PROJECT_COUNT=$(jq 'length' "$LATEST_JSON" 2>/dev/null || echo "未知")
+            MESSAGE="GitHub Trending 自动抓取完成：共抓取到 $PROJECT_COUNT 个项目。"
+        else
+            MESSAGE="GitHub Trending 自动抓取完成，但未能读取项目数量。"
+        fi
+        
+        # Prepare payload for Feishu (text message)
+        PAYLOAD=$(printf '{"msg_type":"text","content":{"text":"%s"}}' "$MESSAGE")
+        
+        # Prepare curl arguments
+        CURL_ARGS=(-sS -X POST -H "Content-Type: application/json" -d "$PAYLOAD" "$FEISHU_WEBHOOK_URL")
+        
+        # Add signature if secret is provided
+        if [[ -n "$FEISHU_BOT_SECRET" ]]; then
+            TIMESTAMP=$(date +%s)
+            STRING_TO_SIGN="${TIMESTAMP}\n${FEISHU_BOT_SECRET}"
+            SIGNATURE=$(echo -n "$STRING_TO_SIGN" | openssl dgst -sha256 -hmac "$FEISHU_BOT_SECRET" -binary | openssl base64)
+            CURL_ARGS=(-sS -X POST -H "Content-Type: application/json" -H "Timestamp: $TIMESTAMP" -H "Sign: $SIGNATURE" -d "$PAYLOAD" "$FEISHU_WEBHOOK_URL")
+        fi
+        
+        # Send notification
+        curl "${CURL_ARGS[@]}" >/dev/null
+        if [[ $? -eq 0 ]]; then
+            log "Feishu 通知发送成功"
+        else
+            log "Feishu 通知发送失败"
+        fi
+        
+        # Save to Obsidian vault and push to git
+        if [[ -n "$LATEST_JSON" && -f "$LATEST_JSON" ]]; then
+            OBSIDIAN_DIR="$HOME/Obsidian_Docs/work_jszr_linux/AI趋势"
+            DATE=$(date '+%Y-%m-%d')
+            FILENAME="${OBSIDIAN_DIR}/${DATE}-GitHub-Trending.md"
+            
+            # Ensure Obsidian directory exists
+            mkdir -p "$OBSIDIAN_DIR"
+            
+            # Generate markdown file from JSON data
+            {
+                echo "---"
+                echo "date: ${DATE}"
+                echo "tags: [GitHub, AI, 趋势, ${DATE}, 自动抓取]"
+                echo "---"
+                echo ""
+                echo "# GitHub 今日热门分析 (${DATE})"
+                echo ""
+                echo "## 项目列表"
+                echo ""
+                echo "| 排名 | 项目 | Stars | 描述 |"
+                echo "|------|------|-------|------|"
+                # Process up to 30 projects
+                jq -r 'to_entries | .[:30][] | "| (.key+1) | [(.value.name)]((.value.url)) | (.value.stars) | (.value.desc // "") |"' "$LATEST_JSON" 2>/dev/null || echo "| Error processing JSON | | | |"
+            } > "$FILENAME"
+            
+            log "已保存 GitHub Trending 数据到 Obsidian: $FILENAME"
+            
+            # Commit and push to Obsidian vault git repo using specified SSH key
+            cd "$HOME/Obsidian_Docs/work_jszr_linux" && \
+            git add "AI趋势/${DATE}-GitHub-Trending.md" && \
+            git -c user.name="homebot" -c user.email="homebot@local" commit -m "Add GitHub Trending for ${DATE}" >/dev/null 2>&1
+            
+            # Attempt push with specific SSH key (works in cron where ssh-agent may not be running)
+            if GIT_SSH_COMMAND="ssh -i $HOME/.ssh/id_rsa -o BatchMode=yes -o ConnectTimeout=5" git push origin main >/dev/null 2>&1; then
+                log "已成功推送到 Obsidian 仓库"
+            else
+                log "推送到 Obsidian 仓库失败（文件已保存到 Obsidian）"
+            fi
+        fi
+    fi
+}
+
+case "${1:-}" in
+    --help|-h)
+        show_help
+        ;;
+    *)
+        run_scrape
+        ;;
+esac
