@@ -201,7 +201,7 @@ PROMPT_EOF
                 local retry=0
                 local max_retries=2
                 while [[ $retry -le $max_retries ]]; do
-                    timeout 180 opencode run --model opencode/qwen3.6-plus-free < "${PROMPT_FILE}.full" > "$ANALYSIS_FILE" 2>/dev/null
+                    timeout 120 opencode run -m opencode/minimax-m2.5-free < "${PROMPT_FILE}.full" > "$ANALYSIS_FILE" 2>/dev/null
                     
                     if [[ -s "$ANALYSIS_FILE" ]]; then
                         break
