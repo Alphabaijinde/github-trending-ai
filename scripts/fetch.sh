@@ -198,24 +198,35 @@ PROMPT_EOF
                 } > "${PROMPT_FILE}.full"
                 
                 ANALYSIS_FILE=$(mktemp)
-                local retry=0
-                local max_retries=2
-                while [[ $retry -le $max_retries ]]; do
-                    timeout 120 opencode run -m opencode/minimax-m2.5-free < "${PROMPT_FILE}.full" > "$ANALYSIS_FILE" 2>/dev/null
+                
+                MODELS=("opencode/minimax-m2.5-free" "opencode/big-pickle" "openai/gpt-5-nano")
+                MODEL_SUCCESS=false
+                
+                for MODEL in "${MODELS[@]}"; do
+                    local retry=0
+                    local max_retries=2
+                    log "尝试使用模型: $MODEL"
                     
-                    if [[ -s "$ANALYSIS_FILE" ]]; then
-                        break
-                    fi
+                    while [[ $retry -le $max_retries ]]; do
+                        timeout 90 opencode run -m "$MODEL" < "${PROMPT_FILE}.full" > "$ANALYSIS_FILE" 2>/dev/null
+                        
+                        if [[ -s "$ANALYSIS_FILE" ]]; then
+                            MODEL_SUCCESS=true
+                            break
+                        fi
+                        
+                        retry=$((retry + 1))
+                        if [[ $retry -le $max_retries ]]; then
+                            log "模型 $MODEL 第 $((retry)) 次超时，重试..."
+                            sleep 2
+                        fi
+                    done
                     
-                    retry=$((retry + 1))
-                    if [[ $retry -le $max_retries ]]; then
-                        log "AI 分析第 $((batch+1)) 批超时，重试 $retry/$max_retries..."
-                        sleep 2
-                    fi
+                    [[ "$MODEL_SUCCESS" == "true" ]] && break
                 done
                 
-                if [[ ! -s "$ANALYSIS_FILE" ]]; then
-                    log "AI 分析第 $((batch+1)) 批失败（重试 $max_retries 次后仍为空）"
+                if [[ "$MODEL_SUCCESS" != "true" ]]; then
+                    log "所有模型均失败，跳过 AI 分析"
                 fi
                 
                 # Clean up AI output
