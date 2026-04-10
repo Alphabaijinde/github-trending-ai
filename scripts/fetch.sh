@@ -260,6 +260,10 @@ PROMPT_EOF
                 sed -i '/^⚙ background_output/d' "$ANALYSIS_FILE"
                 sed -i '/^报告已完成/d' "$ANALYSIS_FILE"
                 sed -i '/^.*背景任务.*$/d' "$ANALYSIS_FILE"
+                sed -i '/^• Analyze.*$/d' "$ANALYSIS_FILE"
+                sed -i '/^✓ Analyze.*$/d' "$ANALYSIS_FILE"
+                sed -i '/Unknown Agent/d' "$ANALYSIS_FILE"
+                sed -i '/^Webfetch/d' "$ANALYSIS_FILE"
                 
                 if [[ -s "$ANALYSIS_FILE" ]]; then
                     cat "$ANALYSIS_FILE" >> "$ALL_ANALYSIS_FILE"
