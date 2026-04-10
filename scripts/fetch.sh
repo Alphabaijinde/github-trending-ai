@@ -257,6 +257,9 @@ PROMPT_EOF
                 sed -i '/^\[90m.*$/d' "$ANALYSIS_FILE"
                 sed -i 's/\[90m//g' "$ANALYSIS_FILE"
                 sed -i 's/\[0m//g' "$ANALYSIS_FILE"
+                sed -i '/^⚙ background_output/d' "$ANALYSIS_FILE"
+                sed -i '/^报告已完成/d' "$ANALYSIS_FILE"
+                sed -i '/^.*背景任务.*$/d' "$ANALYSIS_FILE"
                 
                 if [[ -s "$ANALYSIS_FILE" ]]; then
                     cat "$ANALYSIS_FILE" >> "$ALL_ANALYSIS_FILE"
