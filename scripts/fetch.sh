@@ -199,7 +199,7 @@ PROMPT_EOF
                 
                 ANALYSIS_FILE=$(mktemp)
                 
-                MODELS=("opencode/minimax-m2.5-free" "opencode/big-pickle" "openai/gpt-5-nano")
+                MODELS=("opencode/big-pickle" "opencode/minimax-m2.5-free" "openai/gpt-5-nano")
                 MODEL_SUCCESS=false
                 
                 for MODEL in "${MODELS[@]}"; do
