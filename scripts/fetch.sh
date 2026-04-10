@@ -165,29 +165,24 @@ run_scrape() {
                 cat > "$PROMPT_FILE" << 'PROMPT_EOF'
 你是一位资深技术分析师，正在为技术团队撰写 GitHub Trending 日报。
 
-【输出格式要求 - 严格遵守】
-1. 禁止输出任何开场白、问候语、"我检测到..."、"我将为..."、"我正在分析..."、"先收集"等废话
-2. 禁止输出任何思考过程
-3. 直接以第一个项目开始
-4. 每个项目严格按以下格式输出（不要添加额外标题）：
+【严格禁止】
+- 不要输出任何 Agent 工作日志（如 Waiting、Analyze、Research、Librarian）
+- 不要输出思考过程
+- 不要输出开场白
+- 不要使用任何工具
 
+【输出格式 - 直接输出每个项目的分析表格】
 ### N. 项目名
 
 | 维度 | 内容 |
 |------|------|
 | 简介 | 一句话说明 |
-| 核心功能 | • 功能1<br>• 功能2<br>• 功能3 |
-| 技术栈 | 列出主要技术 |
-| 为什么火 | 具体原因分析 |
-| 适用场景 | 谁用、解决什么问题 |
+| 核心功能 | • 功能1<br>• 功能2 |
+| 技术栈 | 主要技术 |
+| 为什么火 | 具体原因 |
+| 适用场景 | 谁用 |
 
-【分析要求】
-- 技术栈必须基于项目 README 和实际情况，不要编造
-- 为什么火要具体到市场痛点、技术创新、时机等
-- 使用专业但易懂的语言
-- 保持客观，不要过度吹捧
-
-【README 参考】
+【项目数据】
 PROMPT_EOF
                 
                 # Write full prompt to temp file
@@ -264,6 +259,11 @@ PROMPT_EOF
                 sed -i '/^✓ Analyze.*$/d' "$ANALYSIS_FILE"
                 sed -i '/Unknown Agent/d' "$ANALYSIS_FILE"
                 sed -i '/^Webfetch/d' "$ANALYSIS_FILE"
+                sed -i '/^> Sisyphus/d' "$ANALYSIS_FILE"
+                sed -i '/^I'll/d' "$ANALYSIS_FILE"
+                sed -i '/^Let me/d' "$ANALYSIS_FILE"
+                sed -i '/^等待其余/d' "$ANALYSIS_FILE"
+                sed -i '/^Waiting for/d' "$ANALYSIS_FILE"
                 
                 if [[ -s "$ANALYSIS_FILE" ]]; then
                     cat "$ANALYSIS_FILE" >> "$ALL_ANALYSIS_FILE"
