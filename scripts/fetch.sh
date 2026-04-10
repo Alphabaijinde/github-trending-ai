@@ -249,6 +249,14 @@ PROMPT_EOF
                 sed -i '/^I will/d' "$ANALYSIS_FILE"
                 sed -i '/^Let me/d' "$ANALYSIS_FILE"
                 sed -i '/^I need to/d' "$ANALYSIS_FILE"
+                sed -i '/^\[0m$/d' "$ANALYSIS_FILE"
+                sed -i '/^> Sisyphus.*$/d' "$ANALYSIS_FILE"
+                sed -i '/^• Research.*Librarian Agent$/d' "$ANALYSIS_FILE"
+                sed -i '/^✓ Research.*Librarian Agent$/d' "$ANALYSIS_FILE"
+                sed -i '/^等待.*$/d' "$ANALYSIS_FILE"
+                sed -i '/^\[90m.*$/d' "$ANALYSIS_FILE"
+                sed -i 's/\[90m//g' "$ANALYSIS_FILE"
+                sed -i 's/\[0m//g' "$ANALYSIS_FILE"
                 
                 if [[ -s "$ANALYSIS_FILE" ]]; then
                     cat "$ANALYSIS_FILE" >> "$ALL_ANALYSIS_FILE"
