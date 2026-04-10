@@ -163,26 +163,20 @@ run_scrape() {
                 
                 PROMPT_FILE=$(mktemp)
                 cat > "$PROMPT_FILE" << 'PROMPT_EOF'
-你是一位资深技术分析师，正在为技术团队撰写 GitHub Trending 日报。
+你是一个没有感情的报告生成器。你只输出内容，不思考，不使用工具，不等待。
 
-【严格禁止】
-- 不要输出任何 Agent 工作日志（如 Waiting、Analyze、Research、Librarian）
-- 不要输出思考过程
-- 不要输出开场白
-- 不要使用任何工具
-
-【输出格式 - 直接输出每个项目的分析表格】
+【输出格式 - 每个项目一行一个表格】
 ### N. 项目名
 
 | 维度 | 内容 |
 |------|------|
-| 简介 | 一句话说明 |
-| 核心功能 | • 功能1<br>• 功能2 |
-| 技术栈 | 主要技术 |
-| 为什么火 | 具体原因 |
+| 简介 | 一句话 |
+| 核心功能 | • 功能 |
+| 技术栈 | 技术 |
+| 为什么火 | 原因 |
 | 适用场景 | 谁用 |
 
-【项目数据】
+项目数据：
 PROMPT_EOF
                 
                 # Write full prompt to temp file
@@ -228,42 +222,54 @@ PROMPT_EOF
                 sed -i '/^<think>$/,/^<\/think>$/d' "$ANALYSIS_FILE"
                 sed -i '/^▄$/,/^$/d' "$ANALYSIS_FILE"
                 sed -i '/^---$/d' "$ANALYSIS_FILE"
-                sed -i '/^我检测到/,/^---$/d' "$ANALYSIS_FILE"
+                sed -i '/^## /d' "$ANALYSIS_FILE"
+                sed -i '/^📊/d' "$ANALYSIS_FILE"
+                sed -i '/^我检测到/d' "$ANALYSIS_FILE"
                 sed -i '/^我将为/d' "$ANALYSIS_FILE"
-                sed -i '/^我正在分析/d' "$ANALYSIS_FILE"
+                sed -i '/^我正在/d' "$ANALYSIS_FILE"
                 sed -i '/^先收集/d' "$ANALYSIS_FILE"
                 sed -i '/^好的/d' "$ANALYSIS_FILE"
                 sed -i '/^嗯/d' "$ANALYSIS_FILE"
-                sed -i '/^今天用户/d' "$ANALYSIS_FILE"
+                sed -i '/^今天/d' "$ANALYSIS_FILE"
                 sed -i '/^首先/d' "$ANALYSIS_FILE"
                 sed -i '/^接下来/d' "$ANALYSIS_FILE"
                 sed -i '/^最后/d' "$ANALYSIS_FILE"
                 sed -i '/^总的来说/d' "$ANALYSIS_FILE"
                 sed -i '/^思考过程/d' "$ANALYSIS_FILE"
-                sed -i "/^I'll gather/d" "$ANALYSIS_FILE"
+                sed -i '/^等待/d' "$ANALYSIS_FILE"
+                sed -i "/^I'll /d" "$ANALYSIS_FILE"
                 sed -i '/^I will/d' "$ANALYSIS_FILE"
                 sed -i '/^Let me/d' "$ANALYSIS_FILE"
-                sed -i '/^I need to/d' "$ANALYSIS_FILE"
+                sed -i '/^I need/d' "$ANALYSIS_FILE"
+                sed -i '/^Wait/d' "$ANALYSIS_FILE"
+                sed -i '/^Analyzing/d' "$ANALYSIS_FILE"
+                sed -i '/^Research/d' "$ANALYSIS_FILE"
                 sed -i '/^\[0m$/d' "$ANALYSIS_FILE"
-                sed -i '/^> Sisyphus.*$/d' "$ANALYSIS_FILE"
-                sed -i '/^• Research.*Librarian Agent$/d' "$ANALYSIS_FILE"
-                sed -i '/^✓ Research.*Librarian Agent$/d' "$ANALYSIS_FILE"
-                sed -i '/^等待.*$/d' "$ANALYSIS_FILE"
-                sed -i '/^\[90m.*$/d' "$ANALYSIS_FILE"
-                sed -i 's/\[90m//g' "$ANALYSIS_FILE"
+                sed -i '/^\[90m/d' "$ANALYSIS_FILE"
                 sed -i 's/\[0m//g' "$ANALYSIS_FILE"
-                sed -i '/^⚙ background_output/d' "$ANALYSIS_FILE"
-                sed -i '/^报告已完成/d' "$ANALYSIS_FILE"
-                sed -i '/^.*背景任务.*$/d' "$ANALYSIS_FILE"
-                sed -i '/^• Analyze.*$/d' "$ANALYSIS_FILE"
-                sed -i '/^✓ Analyze.*$/d' "$ANALYSIS_FILE"
-                sed -i '/Unknown Agent/d' "$ANALYSIS_FILE"
-                sed -i '/^Webfetch/d' "$ANALYSIS_FILE"
+                sed -i 's/\[90m//g' "$ANALYSIS_FILE"
                 sed -i '/^> Sisyphus/d' "$ANALYSIS_FILE"
-                sed -i '/^I'll/d' "$ANALYSIS_FILE"
-                sed -i '/^Let me/d' "$ANALYSIS_FILE"
-                sed -i '/^等待其余/d' "$ANALYSIS_FILE"
+                sed -i '/^• Research.*Agent$/d' "$ANALYSIS_FILE"
+                sed -i '/^✓ Research.*Agent$/d' "$ANALYSIS_FILE"
+                sed -i '/^• Analyze/d' "$ANALYSIS_FILE"
+                sed -i '/^✓ Analyze/d' "$ANALYSIS_FILE"
+                sed -i '/Unknown Agent/d' "$ANALYSIS_FILE"
+                sed -i '/Librarian Agent/d' "$ANALYSIS_FILE"
+                sed -i '/^⚙ /d' "$ANALYSIS_FILE"
+                sed -i '/^% /d' "$ANALYSIS_FILE"
+                sed -i '/^✗ /d' "$ANALYSIS_FILE"
+                sed -i '/^WebFetch/d' "$ANALYSIS_FILE"
+                sed -i '/^websearch/d' "$ANALYSIS_FILE"
+                sed -i '/^webfetch/d' "$ANALYSIS_FILE"
+                sed -i '/^grep_app_search/d' "$ANALYSIS_FILE"
+                sed -i '/^报告已完成/d' "$ANALYSIS_FILE"
+                sed -i '/^背景任务/d' "$ANALYSIS_FILE"
                 sed -i '/^Waiting for/d' "$ANALYSIS_FILE"
+                sed -i '/任务已完成/d' "$ANALYSIS_FILE"
+                sed -i '/^关键信号/d' "$ANALYSIS_FILE"
+                sed -i '/^趋势/d' "$ANALYSIS_FILE"
+                sed -i '/^创新点/d' "$ANALYSIS_FILE"
+                sed -i '/^$/N;/^\n$/d' "$ANALYSIS_FILE"
                 
                 if [[ -s "$ANALYSIS_FILE" ]]; then
                     cat "$ANALYSIS_FILE" >> "$ALL_ANALYSIS_FILE"
