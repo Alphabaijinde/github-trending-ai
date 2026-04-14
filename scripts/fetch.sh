@@ -188,26 +188,44 @@ PROMPT_EOF
                 
                 ANALYSIS_FILE=$(mktemp)
                 
-                MODELS=("opencode/big-pickle" "opencode/minimax-m2.5-free" "openai/gpt-5-nano")
+                # 修复: 把更可靠的 minimax-m2.5-free 放在第一位
+                # big-pickle 在 cron 环境下容易卡住
+                MODELS=("opencode/minimax-m2.5-free" "opencode/big-pickle")
                 MODEL_SUCCESS=false
+                MODEL_OUTPUT=""
                 
                 for MODEL in "${MODELS[@]}"; do
                     local retry=0
                     local max_retries=2
                     log "尝试使用模型: $MODEL"
                     
-                    while [[ $retry -le $max_retries ]]; do
-                        timeout 90 opencode run -m "$MODEL" < "${PROMPT_FILE}.full" > "$ANALYSIS_FILE" 2>/dev/null
+                    while [[ $retry -lt $max_retries ]]; do
+                        # 修复: 先清空文件，再运行，避免残留数据
+                        > "$ANALYSIS_FILE"
                         
+                        # 修复: 保留 stderr 以便调试，但丢弃 Agent 日志
+                        timeout 90 opencode run -m "$MODEL" < "${PROMPT_FILE}.full" >> "$ANALYSIS_FILE" 2>&1 | grep -v "^\[0m\|^\[90m\|^> \|^• \|^✓ \|^⚙ \|^% \|^✗ \|Search\|Agent\|WebFetch\|background" > /dev/null 2>&1 || true
+                        
+                        # 检查是否有实际内容（过滤掉纯噪音行后）
+                        local has_content=false
                         if [[ -s "$ANALYSIS_FILE" ]]; then
+                            # 简单检查：如果有表格格式的内容就算成功
+                            if grep -q "|" "$ANALYSIS_FILE"; then
+                                has_content=true
+                            fi
+                        fi
+                        
+                        if [[ "$has_content" == "true" ]]; then
                             MODEL_SUCCESS=true
+                            MODEL_OUTPUT=$(cat "$ANALYSIS_FILE")
+                            log "模型 $MODEL 生成成功"
                             break
                         fi
                         
                         retry=$((retry + 1))
-                        if [[ $retry -le $max_retries ]]; then
-                            log "模型 $MODEL 第 $((retry)) 次超时，重试..."
-                            sleep 2
+                        if [[ $retry -lt $max_retries ]]; then
+                            log "模型 $MODEL 第 $((retry+1)) 次尝试失败，重试..."
+                            sleep 3
                         fi
                     done
                     
