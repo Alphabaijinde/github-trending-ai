@@ -87,7 +87,7 @@ run_scrape() {
         
         # Save to Obsidian vault and push to git
         if [[ -n "$LATEST_JSON" && -f "$LATEST_JSON" ]]; then
-            OBSIDIAN_DIR="$HOME/Obsidian_Docs/work_jszr_linux/AI趋势"
+            OBSIDIAN_DIR="$HOME/Obsidian_Docs/work_jszr_linux/04-趋势/AI趋势"
             DATE=$(date '+%Y-%m-%d')
             FILENAME="${OBSIDIAN_DIR}/${DATE}-GitHub-Trending.md"
             
@@ -314,7 +314,7 @@ PROMPT_EOF
             
             # Commit and push to Obsidian vault git repo using specified SSH key
             cd "$HOME/Obsidian_Docs/work_jszr_linux" && \
-            git add "AI趋势/${DATE}-GitHub-Trending.md" && \
+            git add "04-趋势/AI趋势/${DATE}-GitHub-Trending.md" && \
             git -c user.name="homebot" -c user.email="homebot@local" commit -m "Add GitHub Trending for ${DATE}" >/dev/null 2>&1
             
             # Attempt push with specific SSH key (works in cron where ssh-agent may not be running)

@@ -7,7 +7,7 @@ set -euo pipefail
 
 FEISHU_WEBHOOK_URL="https://open.feishu.cn/open-apis/bot/v2/hook/040a20d0-d3cc-4a1e-b93f-450fe35188e6"
 TRENDING_JSON="/home/user/ai-tools/github-trending/data/$(date '+%Y-%m-%d').json"
-OBSIDIAN_DIR="/home/user/Obsidian_Docs/work_jszr_linux/AI趋势"
+OBSIDIAN_DIR="/home/user/Obsidian_Docs/work_jszr_linux/04-趋势/AI趋势"
 DATE=$(date '+%Y-%m-%d')
 
 send_feishu() {
